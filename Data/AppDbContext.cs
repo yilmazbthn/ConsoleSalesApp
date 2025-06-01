@@ -9,6 +9,7 @@ public class AppDbContext:DbContext
     public DbSet<Order> Orders { get; set; }
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<OrderHistory> OrderHistories { get; set; }
+    public DbSet<OrderDetail> OrderDetails { get; set; }
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
@@ -17,22 +18,35 @@ public class AppDbContext:DbContext
     }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Order - User ilişkisi
         modelBuilder.Entity<Order>()
             .HasOne(o => o.User)
             .WithMany(u => u.Orders)
             .HasForeignKey(o => o.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // Order - SalesPerson ilişkisi
         modelBuilder.Entity<Order>()
             .HasOne(o => o.SalesPerson)
             .WithMany()
             .HasForeignKey(o => o.SalesPersonId)
             .OnDelete(DeleteBehavior.Restrict);
-        modelBuilder.Entity<OrderItem>()
-            .HasOne(oi => oi.Order)
-            .WithMany(o => o.OrderItems)
-            .HasForeignKey(oi => oi.OrderId);
+
+        // OrderDetail - Order ilişkisi
+        modelBuilder.Entity<OrderDetail>()
+            .HasOne(od => od.Order)
+            .WithMany(o => o.OrderDetails)
+            .HasForeignKey(od => od.OrderId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // OrderDetail - OrderItem ilişkisi
+        modelBuilder.Entity<OrderDetail>()
+            .HasOne(od => od.OrderItem)
+            .WithMany()
+            .HasForeignKey(od => od.OrderItemId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
+
 
 }
 

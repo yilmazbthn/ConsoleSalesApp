@@ -11,13 +11,13 @@ public class Order
 {
     public int Id { get; set; }
     public string OrderNumber { get; set; }
-    public OrderStatus Status { get; set; } = OrderStatus.Pending;
-    public string OrderContext { get; set; }
-    public DateTime OrderDate { get; set; } = DateTime.Now;
+    public OrderStatus Status { get; set; }
+    public DateTime OrderDate { get; set; }
     public int UserId { get; set; }
     public User User { get; set; }
     public int? SalesPersonId { get; set; }
     public User SalesPerson { get; set; }
-    public List<OrderItem> OrderItems { get; set; }
+
+    public List<OrderDetail> OrderDetails { get; set; }
 
 }
