@@ -88,7 +88,7 @@ class Program
         _customerMenu
             .AddMenu("Ürünleri Listele", ListAllOrderItem)
             .AddMenu("Sepetim", ShowCart)
-            .AddMenu("Güncel Siparişlerim",Orders)
+            .AddMenu("Güncel Siparişlerim",OrderHistroy)
             .AddMenu("Sipariş Geçmişim", OrderHistroy);
         
         
@@ -96,17 +96,57 @@ class Program
         _mainMenu.Show();
         
     }
-
+    private static string GetOrderStatusText(OrderStatus status)
+    {
+        return status switch
+        {
+            OrderStatus.Pending => " Beklemede",
+            OrderStatus.Preparing => " Hazırlanıyor",
+            OrderStatus.Delivered => " Teslim Edildi",
+            OrderStatus.Cancelled => " İptal Edildi",
+            _ => "Bilinmiyor"
+        };
+    }
     private static void OrderHistroy()
     {
-        throw new NotImplementedException();
-    }
+        Console.Clear();
+        Console.WriteLine("📜 Sipariş Geçmişiniz:\n");
 
-    private static void Orders()
-    {
-        throw new NotImplementedException();
+        var userOrders = _context.Orders
+            .Where(o => o.UserId == _loggedInUser.Id)
+            .OrderByDescending(o => o.OrderDate).Include(order => order.OrderDetails)
+            .ThenInclude(orderDetail => orderDetail.OrderItem)
+            .ToList();
+
+        if (userOrders.Count == 0)
+        {
+            Console.WriteLine("Hiç sipariş geçmişiniz bulunmamaktadır.");
+        }
+        else
+        {
+            foreach (var order in userOrders)
+            {
+                Console.WriteLine($"📦 Sipariş No: {order.OrderNumber}");
+                Console.WriteLine($"📅 Tarih     : {order.OrderDate}");
+                Console.WriteLine($"📌 Durum      : {GetOrderStatusText(order.Status)}");
+
+
+                foreach (var detail in order.OrderDetails)
+                {
+                    Console.WriteLine($"  - {detail.OrderItem.ProductName} | {detail.Quantity} x {detail.UnitPrice} TL = {detail.TotalPrice} TL");
+                }
+
+                var total = order.OrderDetails.Sum(d => d.TotalPrice);
+                Console.WriteLine($"💰 Toplam Tutar: {total} TL");
+                Console.WriteLine(new string('-', 40));
+            }
+        }
+
+        Console.WriteLine("\nAna menüye dönmek için bir tuşa basın...");
+        Console.ReadKey();
+        
     }
-    //Sepet
+    
     private static List<OrderItem> Cart = new List<OrderItem>();
     
     private static void ListAllOrderItem()
@@ -164,10 +204,59 @@ class Program
             {
                 Console.WriteLine($"{i + 1}-) {Cart[i].ProductName}");
             }
-        }
+            var total = Cart.Sum(p => p.UnitPrice);
+            Console.WriteLine($"Sepet Tutarı : {total} TL");
+            
+            
+            bool validInput = false;
+            while (!validInput)
+            {
+                
 
-        Console.WriteLine("\nAna menüye dönmek için bir tuşa basın...");
-        Console.ReadKey();
+                var input = Helper.Ask("Sepeti Onaylıyor Musunuz ? (e/h)\n Ana Menü=0",true);
+                switch (input.ToLower())
+                {
+                    case "e":
+                        var newOrder = new Order
+                        {
+                            OrderNumber = $"ORD-{Guid.NewGuid().ToString().Substring(0, 8).ToUpper()}",
+                            OrderDate = DateTime.Now,
+                            Status = OrderStatus.Pending,
+                            UserId = _loggedInUser.Id, 
+                            OrderDetails = Cart.Select(item => new OrderDetail
+                            {
+                                OrderItemId = item.Id,
+                                Quantity = 1,
+                                UnitPrice = item.UnitPrice
+                            }).ToList()
+                        };
+
+                        _context.Orders.Add(newOrder);
+                        _context.SaveChanges();
+
+                        Helper.ShowSuccessMsg("✅ Sipariş başarıyla veritabanına kaydedildi.");
+                        Cart.Clear();
+                        break;
+                    case "h":
+                        Cart.Clear();
+                        break;
+                    case "0":
+                        _customerMenu.Show();
+                        break;
+                    default:
+                        Console.WriteLine("❌ Geçersiz giriş! Lütfen 'e', 'h' veya '0' girin.");
+                        break;
+                }
+            }
+
+            
+
+
+        }
+    
+
+    Console.WriteLine("\nAna menüye dönmek için bir tuşa basın...");
+    Console.ReadKey();
     }
 
 
