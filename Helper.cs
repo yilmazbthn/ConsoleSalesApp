@@ -150,6 +150,7 @@ public static class Helper
 
 public class ConsoleMenu(string title)
 {
+    
     public string Title { get; } = title;
     private readonly List<MenuOption> _options = [];
     public ConsoleMenu AddOption(string title, Action action)
@@ -160,6 +161,7 @@ public class ConsoleMenu(string title)
 
     public ConsoleMenu AddMenu(string title, Action action)
     {
+        
         _options.Add(new MenuOption(title, action, true));
         return this;
     }
